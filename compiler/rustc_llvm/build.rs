@@ -222,6 +222,30 @@ fn main() {
         cfg.define("NDEBUG", None);
     }
 
+    let tpde_llvm_dir =
+        PathBuf::from(tracked_env_var_os("TPDE_LLVM_INCLUDE").expect("TPDE_LLVM_INCLUDE was not set"));
+    cfg.flag(format!("-I{}", tpde_llvm_dir.display()));
+
+    let tpde_build_dir =
+        PathBuf::from(tracked_env_var_os("TPDE_LLVM_OUT").expect("TPDE_LLVM_OUT was not set"))
+            .join("build");
+    println!("cargo:rustc-link-search=native={}", tpde_build_dir.join("tpde-llvm").display());
+    println!("cargo:rustc-link-search=native={}", tpde_build_dir.join("tpde").display());
+    println!(
+        "cargo:rustc-link-search=native={}",
+        tpde_build_dir.join("tpde/deps/spdlog").display()
+    );
+    println!(
+        "cargo:rustc-link-search=native={}",
+        tpde_build_dir.join("tpde/deps/disarm").display()
+    );
+    println!("cargo:rustc-link-search=native={}", tpde_build_dir.join("tpde/deps/fadec").display());
+    println!("cargo:rustc-link-lib=static=tpde_llvm");
+    println!("cargo:rustc-link-lib=static=tpde");
+    println!("cargo:rustc-link-lib=static=spdlog");
+    println!("cargo:rustc-link-lib=static=disarm64");
+    println!("cargo:rustc-link-lib=static=fadec");
+
     rerun_if_changed_anything_in_dir(Path::new("llvm-wrapper"));
     cfg.file("llvm-wrapper/PassWrapper.cpp")
         .file("llvm-wrapper/RustWrapper.cpp")

@@ -43,6 +43,7 @@
 #include "llvm/Transforms/Utils/CanonicalizeAliases.h"
 #include "llvm/Transforms/Utils/FunctionImportUtils.h"
 #include "llvm/Transforms/Utils/NameAnonGlobals.h"
+#include "tpde-llvm/LLVMCompiler.hpp"
 #include <set>
 #include <string>
 #include <vector>
@@ -398,13 +399,28 @@ static CodeGenFileType fromRust(LLVMRustFileType Type) {
 extern "C" LLVMRustResult
 LLVMRustWriteOutputFile(LLVMTargetMachineRef Target, LLVMPassManagerRef PMR,
                         LLVMModuleRef M, const char *Path, const char *DwoPath,
-                        LLVMRustFileType RustFileType, bool VerifyIR) {
+                        LLVMRustFileType RustFileType, bool VerifyIR,
+                        bool Tpde) {
+  std::error_code EC;
+  auto OS = raw_fd_ostream(Path, EC, sys::fs::OF_None);
+
+  if (Tpde) {
+    auto *Mhack = reinterpret_cast<llvm::Module *>(M);
+    auto Compiler = tpde_llvm::LLVMCompiler::create(Mhack->getTargetTriple());
+    std::vector<uint8_t> ObjectBuf;
+    if(Compiler && Compiler->compile_to_elf(*Mhack, ObjectBuf)) {
+      OS.write(reinterpret_cast<char *>(ObjectBuf.data()), ObjectBuf.size());
+      return LLVMRustResult::Success;
+    }
+    // LLVMRustSetLastError("TPDE did faily faily :c sad");
+    // return LLVMRustResult::Failure;
+    // Fallback:
+  }
+
   llvm::legacy::PassManager *PM = unwrap<llvm::legacy::PassManager>(PMR);
   auto FileType = fromRust(RustFileType);
 
   std::string ErrorInfo;
-  std::error_code EC;
-  auto OS = raw_fd_ostream(Path, EC, sys::fs::OF_None);
   if (EC)
     ErrorInfo = EC.message();
   if (ErrorInfo != "") {

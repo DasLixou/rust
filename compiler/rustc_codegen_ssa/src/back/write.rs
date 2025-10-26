@@ -113,6 +113,7 @@ pub struct ModuleConfig {
     pub llvm_plugins: Vec<String>,
     pub autodiff: Vec<config::AutoDiff>,
     pub offload: Vec<config::Offload>,
+    pub tpde: bool,
 }
 
 impl ModuleConfig {
@@ -258,6 +259,7 @@ impl ModuleConfig {
             llvm_plugins: if_regular!(sess.opts.unstable_opts.llvm_plugins.clone(), vec![]),
             autodiff: if_regular!(sess.opts.unstable_opts.autodiff.clone(), vec![]),
             offload: if_regular!(sess.opts.unstable_opts.offload.clone(), vec![]),
+            tpde: if_regular!(sess.opts.unstable_opts.tpde, false),
         }
     }
 

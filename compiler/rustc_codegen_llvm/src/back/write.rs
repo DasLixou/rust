@@ -63,6 +63,7 @@ fn write_output_file<'ll>(
     file_type: llvm::FileType,
     self_profiler_ref: &SelfProfilerRef,
     verify_llvm_ir: bool,
+    tpde: bool,
 ) {
     debug!("write_output_file output={:?} dwo_output={:?}", output, dwo_output);
     let output_c = path_to_c_string(output);
@@ -85,6 +86,7 @@ fn write_output_file<'ll>(
             dwo_output_ptr,
             file_type,
             verify_llvm_ir,
+            tpde,
         )
     };
 
@@ -931,6 +933,7 @@ pub(crate) fn codegen(
                 llvm::FileType::AssemblyFile,
                 &cgcx.prof,
                 config.verify_llvm_ir,
+                config.tpde,
             );
         }
 
@@ -967,6 +970,7 @@ pub(crate) fn codegen(
                     llvm::FileType::ObjectFile,
                     &cgcx.prof,
                     config.verify_llvm_ir,
+                    config.tpde,
                 );
             }
 

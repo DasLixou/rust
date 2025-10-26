@@ -21,7 +21,7 @@ use tracing::span;
 
 use crate::core::build_steps::gcc::{Gcc, GccOutput, add_cg_gcc_cargo_flags};
 use crate::core::build_steps::tool::{RustcPrivateCompilers, SourceType, copy_lld_artifacts};
-use crate::core::build_steps::{dist, llvm};
+use crate::core::build_steps::{dist, llvm, tpde};
 use crate::core::builder;
 use crate::core::builder::{
     Builder, Cargo, Kind, RunConfig, ShouldRun, Step, StepMetadata, crate_description,
@@ -1406,7 +1406,8 @@ pub fn rustc_cargo_env(builder: &Builder<'_>, cargo: &mut Cargo, target: TargetS
 
         let skip_llvm = (builder.kind == Kind::Check) && building_llvm_is_expensive;
         if !skip_llvm {
-            rustc_llvm_env(builder, cargo, target)
+            rustc_llvm_env(builder, cargo, target);
+            rustc_tpde_env(builder, cargo, target);
         }
     }
 
@@ -1499,6 +1500,15 @@ fn rustc_llvm_env(builder: &Builder<'_>, cargo: &mut Cargo, target: TargetSelect
     if builder.config.llvm_assertions {
         cargo.env("LLVM_ASSERTIONS", "1");
     }
+}
+
+/// Compile TPDE and pass down include and output path to rustc_llvm
+fn rustc_tpde_env(builder: &Builder<'_>, cargo: &mut Cargo, target: TargetSelection) {
+    let tpde::TpdeResult { tpde_llvm_include, tpde_llvm_out } =
+        builder.ensure(tpde::Tpde { target });
+
+    cargo.env("TPDE_LLVM_INCLUDE", tpde_llvm_include);
+    cargo.env("TPDE_LLVM_OUT", tpde_llvm_out);
 }
 
 /// `RustcLink` copies compiler rlibs from a rustc build into a compiler sysroot.

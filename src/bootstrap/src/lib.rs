@@ -964,6 +964,10 @@ impl Build {
         }
     }
 
+    fn tpde_out(&self, target: TargetSelection) -> PathBuf {
+        self.out.join(target).join("tpde")
+    }
+
     fn enzyme_out(&self, target: TargetSelection) -> PathBuf {
         self.out.join(&*target.triple).join("enzyme")
     }
