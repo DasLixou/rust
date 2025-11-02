@@ -47,6 +47,10 @@ impl Step for Tpde {
 
         let _guard = builder.msg_unstaged(Kind::Build, "TPDE", target);
 
+        if builder.config.dry_run() {
+            return TpdeResult { tpde_llvm_include, tpde_llvm_out: out_dir };
+        }
+
         let mut cfg = cmake::Config::new(&tpde_dir);
         let ldflags = llvm::LdFlags::default();
 
@@ -68,12 +72,11 @@ impl Step for Tpde {
             .define("LLVM_INCLUDE_DIRS", builder.llvm_out(target).join("include"))
             .define("TPDE_INCLUDE_TESTS", "OFF")
             .define("TPDE_CLANG", "/usr/lib/llvm-19/bin/clang")
-            .define("RUST_LLVM_LIB", output(Command::new(&build_llvm_config).arg("--libfiles")));
+            .define(
+                "RUST_LLVM_LIB",
+                output(Command::new(&build_llvm_config).arg("--libfiles")).lines().next().unwrap(),
+            );
         llvm::configure_cmake(builder, target, &mut cfg, true, ldflags, &[]);
-
-        if builder.config.dry_run() {
-            return TpdeResult { tpde_llvm_include, tpde_llvm_out: out_dir };
-        }
 
         cfg.build();
 
